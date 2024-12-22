@@ -1,0 +1,1 @@
+url_postgres = "postgresql://postgres:1234@localhost:5432/terrorist_attacks"
