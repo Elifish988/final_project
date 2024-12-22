@@ -1,7 +1,7 @@
 import csv
 from DB.postges_db.db import session
 from DB.postges_db.models.attack_model import Attack
-from DB.postges_db.models.date_model import Date
+from DB.postges_db.models.date_model import EventDate
 from DB.postges_db.models.event_model import Event
 from DB.postges_db.models.gname_model import Gname
 from DB.postges_db.models.location_model import Location
@@ -51,7 +51,6 @@ def insert_event(attack, date, gname, location, row, target):
         gname=gname
     )
     session.add(event)
-
 
 
 def insert_gname(row):
@@ -132,14 +131,15 @@ def insert_date(row):
     # אם היום הוא 0, נהפוך אותו ל-1
     iday = 1 if iday == 0 else iday
 
+    date = session.query(EventDate).filter_by(
 
-    date = session.query(Date).filter_by(
         iyear=iyear,
         imonth=imonth,
         iday=iday
     ).first()
     if not date:
-        date = Date(
+        date = EventDate(
+
             iyear=iyear,
             imonth=imonth,
             iday=iday
@@ -160,4 +160,3 @@ def to_float(value):
         return float(value)
     except (ValueError, TypeError):
         return None
-

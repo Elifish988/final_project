@@ -1,6 +1,11 @@
-from sqlalchemy import Column, Integer, BigInteger, ForeignKey, Float
+from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from DB.postges_db.db import Base
+from DB.postges_db.models.date_model import EventDate
+from DB.postges_db.models.location_model import Location
+from DB.postges_db.models.attack_model import Attack
+from DB.postges_db.models.target_model import Target
+from DB.postges_db.models.gname_model import Gname
 
 
 class Event(Base):
@@ -17,8 +22,7 @@ class Event(Base):
     nwound = Column(Float, nullable=True)
     nperps = Column(Float, nullable=True)
 
-    # יחסים עם טבלאות אחרות
-    date = relationship("Date", back_populates="event", uselist=False)
+    date = relationship("EventDate", back_populates="event", uselist=False)
     location = relationship("Location", back_populates="event", uselist=False)
     attack = relationship("Attack", back_populates="events")
     target = relationship("Target", back_populates="events")
