@@ -25,6 +25,7 @@ def shared_attack_strategies_by_region():
     return jsonify(data)
 
 # איתור קבוצות עם העדפות דומות למטרות
+# בעלות תיעדוף של לפחות 10 פעמים בשנה
 @bp_queries_b.route("/groups_with_similar_target_preferences", methods=["GET"])
 def groups_with_similar_target_preferences():
     data = groups_with_similar_target_preferences_service()

@@ -57,23 +57,44 @@ def shared_attack_strategies_by_region_service():
 
 
 def groups_with_similar_target_preferences_service():
-    target_groups = {}
+    targets = session.query(Target).all()
 
-    # שליפת כל האירועים ומיון הקבוצות לפי המטרות שהן תוקפות
-    for event in session.query(Event).all():
-        gname = event.gname
-        target_type = event.target.targetype1_txt
+    target_group_mapping = {}
 
-        # הוספת המטרה לקבוצה אם היא לא קיימת
-        if gname not in target_groups:
-            target_groups[gname] = set()
+    for target in targets:
+        events = session.query(Event).filter_by(target=target).all()
 
-        target_groups[gname].add(target_type)
+        group_year_count = {}
 
-    # חיפוש קבוצות עם העדפות דומות (יותר מסוג אחד של מטרות)
-    similar_groups = {gname: target_types for gname, target_types in target_groups.items() if len(target_types) > 1}
 
-    return similar_groups
+        for event in events:
+            # סינון ערכים רייקים למניעת טעויות
+            if not event.gname or not event.date or not event.date.iyear:
+                continue
+
+            gname = event.gname.gname
+            year = event.date.iyear
+
+            # וידוא שמות הקבוצה והשנה קיימים במבנה
+            if gname not in group_year_count:
+                group_year_count[gname] = {}
+
+            if year not in group_year_count[gname]:
+                group_year_count[gname][year] = 0
+            group_year_count[gname][year] += 1
+
+        # חיפוש קבוצות שתקפו את המטרה לפחות 10 פעמיים בשנה
+        frequent_groups = [
+            gname for gname, years in group_year_count.items()
+            if any(count >= 10 for count in years.values())
+        ]
+
+        # הוספת רשימת הקבוצות למילון התוצאות אם יש קבוצות מתאימות
+        if frequent_groups:
+            target_group_mapping[target.targetype1_txt] = frequent_groups
+
+    return target_group_mapping
+
 
 
 
