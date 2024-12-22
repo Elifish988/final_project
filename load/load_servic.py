@@ -23,7 +23,7 @@ def load_all_csv():
 
 
 def load_csv():
-    csv_file = r"C:\py_projects\final_project\data\globalterrorismdb_1000_rows.csv"
+    csv_file = r"C:\py_projects\final_project\data\globalterrorismdb_0718dist.csv"
     with open(csv_file, mode="r", encoding="windows-1252") as file:
         reader = csv.DictReader(file)
         data = [row for row in reader]
@@ -54,14 +54,21 @@ def insert_event(attack, date, gname, location, row, target):
 
 
 def insert_gname(row):
+    gname_value = row["gname"]
+    # אם הגנום הוא "Unknown", נשנה אותו ל-None
+    if gname_value == "Unknown":
+        gname_value = None
+
     gname = session.query(Gname).filter_by(
-        gname=row["gname"]
+        gname=gname_value
     ).first()
-    if not gname:
+
+    if not gname and gname_value is not None:
         gname = Gname(
-            gname=row["gname"]
+            gname=gname_value
         )
         session.add(gname)
+
     return gname
 
 
@@ -80,16 +87,27 @@ def insert_target(row):
 
 
 def insert_attack(row):
+    attacktype1 = row["attacktype1"]
+    attacktype1_txt = row["attacktype1_txt"]
+
+    # אם אחד מהערכים שווה ל-"Unknown", נניח אותו כ-None
+    if attacktype1 == "Unknown":
+        attacktype1 = None
+    if attacktype1_txt == "Unknown":
+        attacktype1_txt = None
+
     attack = session.query(Attack).filter_by(
-        attacktype1=row["attacktype1"],
-        attacktype1_txt=row["attacktype1_txt"]
+        attacktype1=attacktype1,
+        attacktype1_txt=attacktype1_txt
     ).first()
+
     if not attack:
         attack = Attack(
-            attacktype1=row["attacktype1"],
-            attacktype1_txt=row["attacktype1_txt"]
+            attacktype1=attacktype1,
+            attacktype1_txt=attacktype1_txt
         )
         session.add(attack)
+
     return attack
 
 
@@ -132,14 +150,12 @@ def insert_date(row):
     iday = 1 if iday == 0 else iday
 
     date = session.query(EventDate).filter_by(
-
         iyear=iyear,
         imonth=imonth,
         iday=iday
     ).first()
     if not date:
         date = EventDate(
-
             iyear=iyear,
             imonth=imonth,
             iday=iday

@@ -34,25 +34,46 @@ def shared_to_targets_service(region=None, country=None):
     return [{"target": target, "groups": list(groups)} for target, groups in sorted_result]
 
 
-def get_shared_attack_strategies_by_region():
-    query = session.query(Location.region_txt, Attack.attacktype1_txt, Gname.gname) \
+def shared_attack_strategies_by_region_service():
+    query = session.query(Location.country_txt, Attack.attacktype1_txt, Gname.gname) \
         .join(Event, Event.location_id == Location.id) \
         .join(Target, Event.target_id == Target.id) \
         .join(Gname, Event.gname_id == Gname.id) \
         .join(Attack, Event.attack_id == Attack.id)
 
     data = query.all()
-    region_strategy_map = {}
-
-    for region, attack_type, group in data:
-        region_strategy_map.setdefault(region, {}).setdefault(attack_type, set()).add(group)
+    country_strategy_map = {}
+    # setdefault = הכנסה רק אם לא קיים
+    for country_txt, attack_type, group in data:
+        country_strategy_map.setdefault(country_txt, {}).setdefault(attack_type, set()).add(group)
 
     return {
         region: [
             {"attack_type": attack_type, "groups": list(groups)}
             for attack_type, groups in attack_types.items() if len(groups) > 1
         ]
-        for region, attack_types in region_strategy_map.items() if any(len(groups) > 1 for groups in attack_types.values())
+        for region, attack_types in country_strategy_map.items() if any(len(groups) > 1 for groups in attack_types.values())
     }
 
-print(get_shared_attack_strategies_by_region())
+
+def groups_with_similar_target_preferences_service():
+    target_groups = {}
+
+    # שליפת כל האירועים ומיון הקבוצות לפי המטרות שהן תוקפות
+    for event in session.query(Event).all():
+        gname = event.gname
+        target_type = event.target.targetype1_txt
+
+        # הוספת המטרה לקבוצה אם היא לא קיימת
+        if gname not in target_groups:
+            target_groups[gname] = set()
+
+        target_groups[gname].add(target_type)
+
+    # חיפוש קבוצות עם העדפות דומות (יותר מסוג אחד של מטרות)
+    similar_groups = {gname: target_types for gname, target_types in target_groups.items() if len(target_types) > 1}
+
+    return similar_groups
+
+
+
