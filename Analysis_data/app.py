@@ -1,7 +1,7 @@
 from  flask import Flask
 
-from queries.queries_a_bp import bp_queries_a
-from queries.queries_b_bp import bp_queries_b
+from Analysis_data.bp.queries_a_bp import bp_queries_a
+from Analysis_data.bp.queries_b_bp import bp_queries_b
 
 app = Flask(__name__)
 

@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 
-from queries.servic_queries_b import shared_to_targets_service, shared_attack_strategies_by_region_service, \
-    groups_with_similar_target_preferences_service
+from Analysis_data.services.servic_queries_b import shared_to_targets_service, shared_attack_strategies_by_region_service, \
+    groups_with_similar_target_preferences_service, get_high_intergroup_activity_areas_service, \
+    get_groups_with_same_targets_by_year_and_country_service
 
 bp_queries_b = Blueprint('bp_queries_b', __name__)
 
@@ -30,3 +31,17 @@ def shared_attack_strategies_by_region():
 def groups_with_similar_target_preferences():
     data = groups_with_similar_target_preferences_service()
     return jsonify(data)
+
+
+# זיהוי אזורים עם פעילות בין-קבוצתית גבוהה.
+
+@bp_queries_b.route("/get_high_intergroup_activity", methods=["GET"])
+def get_high_intergroup_activity():
+    filtered_areas = get_high_intergroup_activity_areas_service()
+    return jsonify(filtered_areas)
+
+# זיהוי קשרים בין קבוצות עם מטרות משותפות באותו זמן
+@bp_queries_b.route("/get_groups_with_same_target_same_year_by_country", methods=["GET"])
+def get_groups_with_same_target_same_year_by_country():
+    filtered_areas = get_groups_with_same_targets_by_year_and_country_service()
+    return jsonify(filtered_areas)

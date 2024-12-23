@@ -6,6 +6,7 @@ from DB.postges_db.models.event_model import Event
 from DB.postges_db.models.gname_model import Gname
 from DB.postges_db.models.location_model import Location
 from DB.postges_db.models.target_model import Target
+from config import load
 
 
 def load_all_csv():
@@ -23,7 +24,7 @@ def load_all_csv():
 
 
 def load_csv():
-    csv_file = r"C:\py_projects\final_project\data\globalterrorismdb_0718dist.csv"
+    csv_file = load
     with open(csv_file, mode="r", encoding="windows-1252") as file:
         reader = csv.DictReader(file)
         data = [row for row in reader]

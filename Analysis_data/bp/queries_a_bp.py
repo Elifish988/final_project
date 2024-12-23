@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from queries.servic_queries_a import get_top_deadliest_attacks_service, get_avg_casualties_by_region_service, \
+from Analysis_data.services.servic_queries_a import get_top_deadliest_attacks_service, get_avg_casualties_by_region_service, \
     get_top_5_gnames_by_casualties_service, get_percentage_change_in_attacks_by_country_service, \
     get_most_active_groups_by_region_service
 
