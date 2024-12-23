@@ -2,7 +2,6 @@ import requests
 from config import newsapi_key, newsapi_url, groqapi_key, groqapi_url, opencage_url, opencage_key
 
 
-# שליפת מאמרים מ-Event Registry API
 def get_articles(page):
     payload = {
         "action": "getArticles",
@@ -52,33 +51,37 @@ def process_articles():
     while True:
         articles = get_articles(page)
         if not articles:
-            print("No articles found or response format error.")
-            break  # יציאה אם לא נמצאו מאמרים
+            print("לא נמצאו מאמרים או שגיאה בפורמט התשובה.")
+            break  # יוצאים אם לא נמצאו מאמרים או אם יש שגיאה
 
-        print(f"Articles response: {articles}")  # הדפסת התשובה כדי לראות את המבנה שלה
+        print("תשובה מלאה מה-API:", articles)  # הדפס את התשובה המלאה כדי להבין את הפורמט
 
         if isinstance(articles, dict) and "articles" in articles:
             for article in articles["articles"]:
-                # אם ה-article הוא מחרוזת ולא מילון
+                # הדפס את סוג המאמר כדי להבין יותר את הבעיה
+                print(f"סוג המאמר: {type(article)}")
+
                 if isinstance(article, dict):
                     title = article.get("title")
                     body = article.get("body")
                     if not body:
-                        continue  # לדלג אם אין תוכן
+                        continue  # דילוג על מאמרים שאין להם גוף
 
-                    location = classify_event(body)  # סיווג לקטגוריה
+                    location = classify_event(body)  # מיון המיקום לפי גוף המאמר
                     if location and "location" in location:
                         geocode = geocode_location(location["location"])
                         if geocode:
-                            print(f"Article: {title}")
-                            print(f"Geolocation: {geocode.get('geometry')}")
+                            print(f"מאמר: {title}")
+                            print(f"גיאולוקציה: {geocode.get('geometry')}")
                 else:
-                    print("Found an article that is not a dictionary. Skipping.")
+                    print(f"מדלגים על מאמר בגלל סוג בלתי צפוי: {type(article)}")
         else:
-            print("Error: 'articles' key not found in the response or invalid response format.")
-            break
+            print("שגיאה: לא נמצא מפתח 'articles' בתשובה או שהפורמט שגוי.")
+            break  # יוצאים אם מפתח 'articles' לא קיים או אם הפורמט שגוי
 
         page += 1
+
+
 
 
 # הפעלת התהליך
