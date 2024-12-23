@@ -46,6 +46,3 @@ def get_most_active_groups_by_region():
     country_txt = request.args.get('country_txt')
     result_df = get_most_active_groups_by_region_service(country_txt)
     return jsonify(result_df.to_dict(orient='records'))
-
-
-

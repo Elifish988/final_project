@@ -10,7 +10,7 @@ from config import load
 
 
 def load_all_csv():
-    data = load_csv()
+    data = load_csv(load)
     for row in data:
         date = insert_date(row)
         location = insert_location(row)
@@ -23,8 +23,7 @@ def load_all_csv():
     session.close()
 
 
-def load_csv():
-    csv_file = load
+def load_csv(csv_file):
     with open(csv_file, mode="r", encoding="windows-1252") as file:
         reader = csv.DictReader(file)
         data = [row for row in reader]
