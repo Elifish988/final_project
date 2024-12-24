@@ -20,44 +20,78 @@ def get_top_deadliest_attacks():
     return jsonify(result_df.to_dict(orient='records'))
 
 
-# ממוצע נפגעים לפי איזור
+
+
+import requests
+import folium
+import pandas as pd
+from flask import jsonify
+
 @bp_queries_a.route("/get_avg_casualties_by_region", methods=["GET"])
 def get_avg_casualties_by_region():
     top = request.args.get('top', 'all')
     result_df = get_avg_casualties_by_region_service(top)
 
+    # טוען את קובץ GeoJSON מהאינטרנט
+    url = "https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson"
+    response = requests.get(url)
+    geojson_data = response.json()
+
+    # יצירת מילון לערכי avg_casualties לפי מדינה
+    casualties_dict = {data["country_txt"]: data["avg_casualties"] for data in result_df}
+
+    # חישוב אחוזונים לחלוקה לצבעים
+    casualties_values = list(casualties_dict.values())
+    quintiles = pd.qcut(casualties_values, 5, labels=['#FFEDA0', '#FED976', '#FEB24C', '#FD8D3C', '#E31A1C'])
+
+    # מיפוי שם מדינה לצבע
+    color_mapping = {list(casualties_dict.keys())[i]: quintiles[i] for i in range(len(casualties_dict))}
+
+    # פונקציה לקביעת סגנון עבור GeoJSON
+    def style_function(feature):
+        country_name = feature["properties"]["name"]
+        color = color_mapping.get(country_name, "#B0B0B0")  # ברירת מחדל לצבע אפור
+        return {
+            "fillColor": color,
+            "color": "black",
+            "weight": 0.5,
+            "fillOpacity": 0.7,
+        }
+
+    # פונקציה ליצירת tooltip עם avg_casualties
+    def tooltip_function(feature):
+        country_name = feature["properties"]["name"]
+        casualties = casualties_dict.get(country_name, "No data")
+        return f"{country_name}: {casualties}"
+
     # יצירת המפה
     m = folium.Map(location=[20, 0], zoom_start=2)
 
-    # חישוב אחוזונים לחלוקה לחמישה גוונים
-    casualties_values = [data['avg_casualties'] for data in result_df]
-    quintiles = pd.qcut(casualties_values, 5, labels=['#FFEDA0', '#FED976', '#FEB24C', '#FD8D3C', '#E31A1C'])
-
-    # יצירת מיפוי של מדינות לפי הגוון המתאים
-    country_colors = {result_df[i]['country_txt']: quintiles[i] for i in range(len(result_df))}
-
-    # הוספת המידע למפה
-    for country_data in result_df:
-        location = get_location(country_data['country_txt'])
-        if location:
-            color = country_colors[country_data['country_txt']]
-            folium.CircleMarker(
-                location,
-                radius=10,
-                color=color,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.6,
-                popup=f"{country_data['country_txt']}: {country_data['avg_casualties']} casualties"
-            ).add_to(m)
-        else:
-            print(f"Warning: No location found for {country_data['country_txt']}")
+    # הוספת שכבת GeoJSON עם סגנון מותאם
+    folium.GeoJson(
+        geojson_data,
+        style_function=style_function,
+        tooltip=folium.GeoJsonTooltip(
+            fields=["name"],
+            aliases=["Country:"],
+            localize=True,
+            labels=False,
+            sticky=True
+        ),
+        highlight_function=lambda x: {'weight': 3, 'fillOpacity': 0.9},
+        popup=folium.GeoJsonPopup(
+            fields=["name"],
+            aliases=["Country:"],
+            localize=True
+        )
+    ).add_to(m)
 
     # המרת המפה ל-HTML string
     map_html = m._repr_html_()
 
-    # החזרת המפה כתגובה
     return map_html
+
+
 
 
 # חמשה קבוצות עם הכי הרבה נפגעים לאורך השנים
