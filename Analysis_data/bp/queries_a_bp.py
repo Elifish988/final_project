@@ -32,6 +32,7 @@ def get_avg_casualties_by_region():
     top = request.args.get('top', 'all')
     result_df = get_avg_casualties_by_region_service(top)
 
+
     # טוען את קובץ GeoJSON מהאינטרנט
     url = "https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson"
     response = requests.get(url)
