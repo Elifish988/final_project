@@ -1,5 +1,5 @@
 url_postgres = "postgresql://postgres:1234@localhost:5432/terrorist_attacks"
-load = r"C:\py_projects\final_project\data\globalterrorismdb_0718dist.csv"
+load = r"C:\py_projects\final_project\data\globalterrorismdb_1000_rows.csv"
 load_b = r"C:\py_projects\final_project\data\RAND_Database_of_Worldwide_Terrorism_Incidents - 5000 rows.csv"
 newsapi_url = "https://eventregistry.org/api/v1/article/getArticles"
 newsapi_key = "e77642d7-76be-43fc-b074-57712807d9dd"

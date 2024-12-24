@@ -19,10 +19,6 @@ def get_top_deadliest_attacks():
 
 
 
-
-
-
-
 # ממוצע נפגעים לפי איזור.
 # כולל הצגה במפה
 @bp_queries_a.route("/get_avg_casualties_by_region", methods=["GET"])

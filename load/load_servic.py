@@ -40,6 +40,8 @@ def insert_event(attack, date, gname, location, row, target):
     nwound = None if (nwound is None or nwound < 0) else nwound
     nperps = None if (nperps is None or nperps < 0) else nperps
 
+    summary = row.get("summary")  # קבלת הערך של summary מתוך שורת ה-CSV
+
     event = Event(
         nkill=nkill,
         nwound=nwound,
@@ -48,7 +50,8 @@ def insert_event(attack, date, gname, location, row, target):
         location=location,
         attack=attack,
         target=target,
-        gname=gname
+        gname=gname,
+        summary=summary  # הכנסה של ה-summary
     )
     session.add(event)
 
