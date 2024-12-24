@@ -1,88 +1,138 @@
 import requests
-from config import newsapi_key, newsapi_url, groqapi_key, groqapi_url, opencage_url, opencage_key
+import json
+import time
 
+from config import groqapi_url, groqapi_key
 
-def get_articles(page):
-    payload = {
-        "action": "getArticles",
-        "keyword": "terror attack",
-        "ignoreSourceGroupUri": "paywall/paywalled_sources",
-        "articlesPage": page,
-        "articlesCount": 100,
-        "articlesSortBy": "socialScore",
-        "articlesSortByAsc": False,
-        "dataType": ["news", "pr"],
-        "forceMaxDataTimeWindow": 31,
-        "resultType": "articles",
-        "apiKey": newsapi_key,
+# Define the schema in Python as a dictionary
+response_format = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "news_classification",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "classification": {
+                    "type": "string",
+                    "enum": [
+                        "Current terrorism event",
+                        "Past terrorism event",
+                        "Other news event"
+                    ]
+                },
+                "location": {
+                    "type": "string",
+                    "description": "The location where the event occurred"
+                }
+            },
+            "required": ["classification", "location"],
+            "additionalProperties": False
+        },
+        "strict": True
     }
-    response = requests.post(newsapi_url, json=payload)
+}
 
-    # בדיקה אם הבקשה הצליחה
+# Function to send the request to classify articles
+def classify_news_article(article_content):
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {groqapi_key}"
+    }
+
+    payload = {
+        "messages": [
+            {"role": "system", "content": "You are an assistant classifying news articles into categories and locations."},
+            {"role": "user", "content": f"This is a news article: {article_content}"}
+        ],
+        "model": "grok-2-1212",
+        "stream": False,
+        "temperature": 0,
+        "response_format": response_format
+    }
+
+    # Send the request
+    response = requests.post(groqapi_url, headers=headers, json=payload)
+
+    # Check for successful response
     if response.status_code == 200:
         try:
-            return response.json()
-        except ValueError:
-            print("Error: Failed to parse JSON response.")
-            return None
+            response_json = response.json()
+            print("Raw API Response:", json.dumps(response_json, indent=4))  # הדפסת התגובה הגולמית
+
+            # Extract the content which is a stringified JSON and parse it
+            content = response_json['choices'][0]['message']['content']
+            parsed_response = json.loads(content)  # פריסת ה-JSON בתוך ה-content
+
+            # Return the classification and location
+            classification = parsed_response.get("classification", "Unknown")
+            location = parsed_response.get("location", "Unknown")
+            return {"classification": classification, "location": location}
+        except json.JSONDecodeError:
+            print("Failed to decode JSON response")
+            return {"classification": "Unknown", "location": "Unknown"}
     else:
-        print(f"Error: Request failed with status code {response.status_code}")
-        return None
+        print(f"Request failed with status code {response.status_code}: {response.text}")
+        return {"classification": "Unknown", "location": "Unknown"}
 
+# Function to extract and classify articles
+def extract_and_classify_articles(articles):
+    results = articles.get("articles", {}).get("results", [])
+    for result in results:
+        dt = result.get("dateTime")
+        title = result.get("title")
+        body = result.get("body", "")
+        first_200_words = " ".join(body.split()[:200])
 
-# סיווג מאמרים בעזרת GroqAPI
-def classify_event(text):
-    headers = {"Authorization": f"Bearer {groqapi_key}"}
-    payload = {"text": text}
-    response = requests.post(groqapi_url, json=payload, headers=headers)
-    return response.json() if response.status_code == 200 else None
+        # Print the extracted data
+        print(f"Date and Time: {dt}")
+        print(f"Title: {title}")
+        print(f"Snippet: {first_200_words}")
 
-
-# זיהוי נקודות ציון בעזרת OpenCage API
-def geocode_location(location_name):
-    params = {"q": location_name, "key": opencage_key}
-    response = requests.get(opencage_url, params=params)
-    return response.json() if response.status_code == 200 else None
-
-
-# תהליך עיבוד
-def process_articles():
-    page = 1
-    while True:
-        articles = get_articles(page)
-        if not articles:
-            print("לא נמצאו מאמרים או שגיאה בפורמט התשובה.")
-            break  # יוצאים אם לא נמצאו מאמרים או אם יש שגיאה
-
-        print("תשובה מלאה מה-API:", articles)  # הדפס את התשובה המלאה כדי להבין את הפורמט
-
-        if isinstance(articles, dict) and "articles" in articles:
-            for article in articles["articles"]:
-                # הדפס את סוג המאמר כדי להבין יותר את הבעיה
-                print(f"סוג המאמר: {type(article)}")
-
-                if isinstance(article, dict):
-                    title = article.get("title")
-                    body = article.get("body")
-                    if not body:
-                        continue  # דילוג על מאמרים שאין להם גוף
-
-                    location = classify_event(body)  # מיון המיקום לפי גוף המאמר
-                    if location and "location" in location:
-                        geocode = geocode_location(location["location"])
-                        if geocode:
-                            print(f"מאמר: {title}")
-                            print(f"גיאולוקציה: {geocode.get('geometry')}")
-                else:
-                    print(f"מדלגים על מאמר בגלל סוג בלתי צפוי: {type(article)}")
+        # Classify the article using the classification function
+        classification_response = classify_news_article(body)
+        if classification_response:
+            classification = classification_response.get("classification", "Unknown")
+            location = classification_response.get("location", "Unknown")
+            print(f"Classification: {classification}")
+            print(f"Location: {location}")
         else:
-            print("שגיאה: לא נמצא מפתח 'articles' בתשובה או שהפורמט שגוי.")
-            break  # יוצאים אם מפתח 'articles' לא קיים או אם הפורמט שגוי
+            print("Failed to classify the article.")
 
-        page += 1
+        print("-" * 50)
 
+# Function to simulate fetching articles (replace with your API call)
+def fetch_articles():
+    # Simulated data for testing
+    return {
+        "articles": {
+            "results": [
+                {
+                    "uri": "2024-12-583281968",
+                    "lang": "eng",
+                    "dateTime": "2024-12-22T16:40:27Z",
+                    "title": "German Mother Mourns Loss of 9-Year-Old Son in Christmas Market Attack",
+                    "body": "Germany continues to reel from a terror attack committed by Taleb A., a Saudi man who was granted German citizenship...",
+                },
+                {
+                    "uri": "2024-12-583281969",
+                    "lang": "eng",
+                    "dateTime": "2024-12-22T16:45:00Z",
+                    "title": "Explosion in Central Paris Injures Several People",
+                    "body": "An explosion rocked central Paris today, leaving several people injured. Authorities are investigating the cause...",
+                }
+            ]
+        }
+    }
 
+# Main loop to fetch and classify articles every two minutes
+def main_loop():
+    while True:
+        print("Fetching articles...")
+        articles = fetch_articles()
+        extract_and_classify_articles(articles)
+        print("Waiting for 2 minutes before fetching again...")
+        time.sleep(120)
 
-
-# הפעלת התהליך
-process_articles()
+# Run the main loop
+if __name__ == "__main__":
+    main_loop()
