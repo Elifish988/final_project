@@ -22,6 +22,8 @@ def get_top_deadliest_attacks():
 
 
 
+
+
 import requests
 import folium
 import pandas as pd
@@ -31,7 +33,6 @@ from flask import jsonify
 def get_avg_casualties_by_region():
     top = request.args.get('top', 'all')
     result_df = get_avg_casualties_by_region_service(top)
-
 
     # טוען את קובץ GeoJSON מהאינטרנט
     url = "https://raw.githubusercontent.com/datasets/geo-boundaries-world-110m/master/countries.geojson"
@@ -59,38 +60,27 @@ def get_avg_casualties_by_region():
             "fillOpacity": 0.7,
         }
 
-    # פונקציה ליצירת tooltip עם avg_casualties
-    def tooltip_function(feature):
-        country_name = feature["properties"]["name"]
-        casualties = casualties_dict.get(country_name, "No data")
-        return f"{country_name}: {casualties}"
-
     # יצירת המפה
     m = folium.Map(location=[20, 0], zoom_start=2)
 
-    # הוספת שכבת GeoJSON עם סגנון מותאם
-    folium.GeoJson(
-        geojson_data,
-        style_function=style_function,
-        tooltip=folium.GeoJsonTooltip(
-            fields=["name"],
-            aliases=["Country:"],
-            localize=True,
-            labels=False,
-            sticky=True
-        ),
-        highlight_function=lambda x: {'weight': 3, 'fillOpacity': 0.9},
-        popup=folium.GeoJsonPopup(
-            fields=["name"],
-            aliases=["Country:"],
-            localize=True
-        )
-    ).add_to(m)
+    # הוספת שכבת GeoJSON עם Tooltip מותאם אישית
+    for feature in geojson_data['features']:
+        country_name = feature['properties']['name']
+        casualties = casualties_dict.get(country_name, "No data")
+        tooltip_text = f"{country_name}: {casualties}"
+
+        # שכבת GeoJSON מותאמת
+        folium.GeoJson(
+            feature,
+            style_function=style_function,
+            tooltip=folium.Tooltip(tooltip_text)
+        ).add_to(m)
 
     # המרת המפה ל-HTML string
     map_html = m._repr_html_()
 
     return map_html
+
 
 
 
