@@ -16,8 +16,8 @@ def get_location(name):
             return lat, lon  # מחזיר את הערכים כנפרדים
         else:
             print(f"No geolocation data found for {name}.")
-            return None, None  # במקרה שאין מיקום
+            return None  # במקרה שאין מיקום
     else:
         print(f"Error fetching geolocation data: {response.status_code}")
-        return None, None  # במקרה של בעיה בשאילתה
-print(get_location("India"))
+        return None # במקרה של בעיה בשאילתה
+print(get_location("ש"))

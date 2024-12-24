@@ -35,9 +35,9 @@ def get_avg_casualties_by_region_service(top):
     avg_casualties_sorted = avg_casualties.sort_values(by='avg_casualties', ascending=False)
 
     if top == 'top_5':
-        return avg_casualties_sorted.head(5)
+        return avg_casualties_sorted.head(5).to_dict(orient='records')
     else:
-        return avg_casualties_sorted
+        return avg_casualties_sorted.to_dict(orient='records')
 # מיועד לשימוש בהצגת מפה
 # def get_avg_casualties_by_region_service(top):
 #     # שליפת הנתונים מתוך טבלאות ה-Location וה-Event
